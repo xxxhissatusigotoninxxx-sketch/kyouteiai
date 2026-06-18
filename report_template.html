@@ -559,6 +559,163 @@
             font-weight: 800;
             color: var(--success);
         }
+
+        /* 📱 Mobile Responsive Styles */
+        /* Mobile meta classes */
+        .racer-mobile-meta {
+            display: none;
+            flex-direction: column;
+            gap: 0.15rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .racer-mobile-row {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+        }
+        .racer-mobile-row .class-badge {
+            font-size: 0.6rem;
+            padding: 0 0.25rem;
+            line-height: 1.2;
+        }
+        
+        .bet-mobile-meta {
+            display: none;
+            flex-direction: column;
+            gap: 0.1rem;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+        .ticket-mobile-meta {
+            display: none;
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-family: 'Outfit', sans-serif;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 1rem 0.5rem;
+            }
+            .panel {
+                padding: 1rem;
+                border-radius: 12px;
+            }
+            header {
+                padding: 1rem;
+                border-radius: 12px;
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.75rem;
+            }
+            .header-title-section h1 {
+                font-size: 1.3rem;
+            }
+            .weather-panel {
+                width: 100%;
+                justify-content: space-between;
+                gap: 0.5rem;
+            }
+            
+            .control-box {
+                padding: 0.75rem;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 1rem;
+            }
+            .input-group {
+                width: 100%;
+            }
+            .form-input-number, .form-select {
+                width: 100%;
+            }
+            
+            .summary-stats {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.5rem;
+                width: 100%;
+            }
+            .stat-card {
+                text-align: center;
+                min-width: 0;
+                padding: 0.4rem;
+            }
+            
+            /* Racer Table Mobile Optimization */
+            .racer-table th, .racer-table td {
+                padding: 0.5rem 0.4rem;
+                font-size: 0.75rem;
+            }
+            /* 3:級別, 4:F/L, 5:全国, 6:当地, 7:モーター, 8:展示T を非表示 */
+            .racer-table th:nth-child(3), .racer-table td:nth-child(3),
+            .racer-table th:nth-child(4), .racer-table td:nth-child(4),
+            .racer-table th:nth-child(5), .racer-table td:nth-child(5),
+            .racer-table th:nth-child(6), .racer-table td:nth-child(6),
+            .racer-table th:nth-child(7), .racer-table td:nth-child(7),
+            .racer-table th:nth-child(8), .racer-table td:nth-child(8) {
+                display: none !important;
+            }
+            .racer-mobile-meta {
+                display: flex !important;
+            }
+            
+            /* Bets Table Mobile Optimization */
+            .bet-table th, .bet-table td {
+                padding: 0.5rem 0.4rem;
+                font-size: 0.75rem;
+            }
+            /* 2:分類, 4:オッズ, 5:AI確率, 7:想定払戻, 8:想定回収率 を非表示 */
+            .bet-table th:nth-child(2), .bet-table td:nth-child(2),
+            .bet-table th:nth-child(4), .bet-table td:nth-child(4),
+            .bet-table th:nth-child(5), .bet-table td:nth-child(5),
+            .bet-table th:nth-child(7), .bet-table td:nth-child(7),
+            .bet-table th:nth-child(8), .bet-table td:nth-child(8) {
+                display: none !important;
+            }
+            .ticket-mobile-meta {
+                display: block !important;
+            }
+            .bet-mobile-meta {
+                display: flex !important;
+            }
+            
+            .ticket-num-badge {
+                width: 13px;
+                height: 13px;
+                font-size: 0.55rem;
+            }
+            
+            #hybridTicketsContainer {
+                padding: 0.5rem;
+            }
+            .hybrid-ticket-badge {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.7rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .racer-table th, .racer-table td,
+            .bet-table th, .bet-table td {
+                padding: 0.4rem 0.25rem;
+                font-size: 0.7rem;
+            }
+            .ticket-num-badge {
+                width: 11px;
+                height: 11px;
+                font-size: 0.5rem;
+            }
+            .ticket-badge-display {
+                gap: 0.1rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -672,7 +829,7 @@
                 <div class="input-group">
                     <label for="totalInvestment">総賭け金 (円)</label>
                     <div class="number-input-wrapper">
-                        <input type="number" id="totalInvestment" value="3100" min="100" step="100" class="form-input-number">
+                        <input type="number" id="totalInvestment" value="3000" min="100" step="100" class="form-input-number">
                         <span class="currency-unit">円</span>
                     </div>
                 </div>
@@ -680,7 +837,7 @@
                 <div class="input-group">
                     <label for="allocationMode">配分モード</label>
                     <select id="allocationMode" class="form-select">
-                        <option value="optimize">自動最適化 (トリガミ防止&回収最大)</option>
+                        <option value="optimize">一撃大穴 (トリガミ防止&回収最大)</option>
                         <option value="target" selected>本命重視 (非ガミ維持)</option>
                         <option value="equal">払戻均等 (リスク分散)</option>
                     </select>
@@ -816,7 +973,7 @@
             bindEvents();
             
             // 6. 初回資金配分計算
-            document.getElementById("totalInvestment").value = data.totalInvestment || 3100;
+            document.getElementById("totalInvestment").value = data.totalInvestment || 3000;
             updateAllocation();
         }
 
@@ -841,14 +998,29 @@
                 // FL表示
                 const flText = `F${r.flying || 0} L${r.late || 0}`;
                 const flColor = (r.flying > 0 || r.late > 0) ? 'color: var(--danger); font-weight: 700;' : 'color: var(--text-muted);';
+                const flStyle = (r.flying > 0 || r.late > 0) ? 'color: #f87171; font-weight: 700;' : '';
                 
                 // 率の表示形式
                 const nationRate = `${r.winRate.toFixed(2)} (${r.doubleRate.toFixed(0)}%)`;
                 const localRate = r.localWinRate ? `${r.localWinRate.toFixed(2)} (${r.localDoubleRate.toFixed(0)}%)` : '-';
+                const localWinRateStr = r.localWinRate ? r.localWinRate.toFixed(2) : '-';
                 
                 tr.innerHTML = `
                     <td><span class="boat-badge bb${r.num}">${r.num}</span></td>
-                    <td><span class="racer-name">${r.name}</span></td>
+                    <td>
+                        <span class="racer-name">${r.name}</span>
+                        <div class="racer-mobile-meta">
+                            <div class="racer-mobile-row">
+                                <span class="class-badge class-${r.racerClass.toLowerCase()}">${r.racerClass}</span>
+                                <span style="${flStyle}">${flText}</span>
+                            </div>
+                            <div class="racer-mobile-row" style="color: var(--text-muted); font-size: 0.65rem;">
+                                <span>全国:${r.winRate.toFixed(2)}</span>
+                                <span>当地:${localWinRateStr}</span>
+                                <span>M:${Math.round(r.motorRate)}%</span>
+                            </div>
+                        </div>
+                    </td>
                     <td><span class="class-badge class-${r.racerClass.toLowerCase()}">${r.racerClass}</span></td>
                     <td style="${flColor}">${flText}</td>
                     <td style="font-weight:600;">${nationRate}</td>
@@ -1019,10 +1191,25 @@
                 tr.innerHTML = `
                     <td class="checkbox-cell"><input type="checkbox" class="bet-checkbox trifecta-cb" data-id="${item.id}" checked></td>
                     <td><span class="class-badge class-${item.label === '本命' ? 'a1' : (item.label === '対抗' ? 'b1' : 'a2')}">${item.label}</span></td>
-                    <td>${getTicketBadgeHtml(item.combo)}</td>
+                    <td>
+                        <div style="display: flex; flex-direction: column;">
+                            ${getTicketBadgeHtml(item.combo)}
+                            <div class="ticket-mobile-meta">
+                                <span class="class-badge class-${item.label === '本命' ? 'a1' : (item.label === '対抗' ? 'b1' : 'a2')}" style="padding: 0 0.2rem; font-size: 0.6rem; line-height: 1.2;">${item.label}</span>
+                                <span>${item.odds > 0 ? item.odds.toFixed(1) + '倍' : '-'}</span> | 
+                                <span>AI: ${(item.prob * 100).toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    </td>
                     <td class="odds-val">${item.odds > 0 ? item.odds.toFixed(1) + '倍' : '-'}</td>
                     <td class="prob-text-cell">${(item.prob * 100).toFixed(1)}%</td>
-                    <td class="bet-display-cell" id="bet_${item.id}">-</td>
+                    <td>
+                        <span class="bet-display-cell" id="bet_${item.id}">-</span>
+                        <div class="bet-mobile-meta">
+                            <span id="bet_mobile_payout_${item.id}">-</span>
+                            <span id="bet_mobile_return_${item.id}">-</span>
+                        </div>
+                    </td>
                     <td class="payout-display-cell" id="payout_${item.id}">-</td>
                     <td class="return-pct-cell" id="return_${item.id}">-</td>
                 `;
@@ -1038,10 +1225,25 @@
                 tr.innerHTML = `
                     <td class="checkbox-cell"><input type="checkbox" class="bet-checkbox trio-cb" data-id="${item.id}" checked></td>
                     <td><span class="class-badge class-b1">${item.label}</span></td>
-                    <td>${getTicketBadgeHtml(item.combo, true)}</td>
+                    <td>
+                        <div style="display: flex; flex-direction: column;">
+                            ${getTicketBadgeHtml(item.combo, true)}
+                            <div class="ticket-mobile-meta">
+                                <span class="class-badge class-b1" style="padding: 0 0.2rem; font-size: 0.6rem; line-height: 1.2;">${item.label}</span>
+                                <span>${item.odds > 0 ? item.odds.toFixed(1) + '倍' : '-'}</span> | 
+                                <span>AI: ${(item.prob * 100).toFixed(1)}%</span>
+                            </div>
+                        </div>
+                    </td>
                     <td class="odds-val">${item.odds > 0 ? item.odds.toFixed(1) + '倍' : '-'}</td>
                     <td class="prob-text-cell">${(item.prob * 100).toFixed(1)}%</td>
-                    <td class="bet-display-cell" id="bet_${item.id}">-</td>
+                    <td>
+                        <span class="bet-display-cell" id="bet_${item.id}">-</span>
+                        <div class="bet-mobile-meta">
+                            <span id="bet_mobile_payout_${item.id}">-</span>
+                            <span id="bet_mobile_return_${item.id}">-</span>
+                        </div>
+                    </td>
                     <td class="payout-display-cell" id="payout_${item.id}">-</td>
                     <td class="return-pct-cell" id="return_${item.id}">-</td>
                 `;
@@ -1143,6 +1345,8 @@
                 const betEl = document.getElementById(`bet_${item.id}`);
                 const payoutEl = document.getElementById(`payout_${item.id}`);
                 const returnEl = document.getElementById(`return_${item.id}`);
+                const mobilePayoutEl = document.getElementById(`bet_mobile_payout_${item.id}`);
+                const mobileReturnEl = document.getElementById(`bet_mobile_return_${item.id}`);
                 const row = document.getElementById(`row_${item.id}`);
                 const cb = document.querySelector(`.bet-checkbox[data-id="${item.id}"]`);
                 
@@ -1162,14 +1366,21 @@
                         const isGami = payout < totalBudget;
                         
                         payoutEl.textContent = `${payout.toLocaleString()}円`;
+                        mobilePayoutEl.textContent = `払戻: ${payout.toLocaleString()}円`;
                         inverseOddsSum += (1.0 / item.odds);
                         
                         if (isGami) {
-                            returnEl.innerHTML = `<span class="return-pct-cell color-gami">${returnPct.toFixed(0)}% <span class="gamiri-warning-badge">⚠️ ガミ</span></span>`;
+                            const gamiHtml = `<span class="return-pct-cell color-gami">${returnPct.toFixed(0)}% <span class="gamiri-warning-badge">⚠️ ガミ</span></span>`;
+                            const gamiMobileHtml = `<span class="return-pct-cell color-gami" style="font-size:0.65rem;">(${returnPct.toFixed(0)}% ⚠️ガミ)</span>`;
+                            returnEl.innerHTML = gamiHtml;
+                            mobileReturnEl.innerHTML = gamiMobileHtml;
                             if (row) row.classList.add("gami-row");
                             hasGami = true;
                         } else {
-                            returnEl.innerHTML = `<span class="return-pct-cell color-safe">${returnPct.toFixed(0)}%</span>`;
+                            const safeHtml = `<span class="return-pct-cell color-safe">${returnPct.toFixed(0)}%</span>`;
+                            const safeMobileHtml = `<span class="return-pct-cell color-safe" style="font-size:0.65rem;">(${returnPct.toFixed(0)}%)</span>`;
+                            returnEl.innerHTML = safeHtml;
+                            mobileReturnEl.innerHTML = safeMobileHtml;
                             if (row) row.classList.remove("gami-row");
                         }
                         
@@ -1177,12 +1388,16 @@
                     } else {
                         payoutEl.textContent = "-";
                         returnEl.textContent = "-";
+                        mobilePayoutEl.textContent = "-";
+                        mobileReturnEl.textContent = "-";
                         if (row) row.classList.remove("gami-row");
                     }
                 } else {
                     betEl.textContent = "-";
                     payoutEl.textContent = "-";
                     returnEl.textContent = "-";
+                    mobilePayoutEl.textContent = "-";
+                    mobileReturnEl.textContent = "-";
                     if (row) {
                         row.classList.remove("gami-row");
                         row.classList.add("unselected-row");
@@ -1392,14 +1607,9 @@
                 }
             }
             
-            // 3. 余剰金を本命（選択された中で最も確率が高い買い目）に加算
-            if (remaining >= 100) {
-                if (selectedActive.length > 0) {
-                    const bestActiveId = selectedActive[0];
-                    allocations[bestActiveId] += remaining;
-                } else {
-                    allocations[evMaxItem.id] += remaining;
-                }
+            // 3. 余剰金を「一撃大穴」に全額上乗せ（回収率最大化）
+            if (remaining >= 100 && evMaxItem) {
+                allocations[evMaxItem.id] += remaining;
                 remaining = 0;
             }
             
@@ -1539,7 +1749,7 @@
                 
                 strategyHtml = `
                     <strong>💡 本命重視（一撃大穴ヘッジ付き）戦略:</strong><br>
-                    的中確率の高い${isTrio ? '3連複' : '3連単'} <strong>[${bestTarget.combo.join(targetArrow)}]</strong> (AI勝率: ${(bestTarget.prob * 100).toFixed(1)}%) 等に資金の大部分（${(totalBudget - 100).toLocaleString()}円）を配分してトリガミを回避しつつ、期待値が最も高い${evMaxBet.id.startsWith('f_') ? '3連複' : '3連単'} <strong>[${evMaxBet.combo.join(evMaxArrow)}]</strong> (オッズ: ${evMaxBet.odds.toFixed(1)}倍) に100円を一撃狙いとして別枠投資するハイブリッド設計です。<br>
+                    的中確率の高い${isTrio ? '3連複' : '3連単'} <strong>[${bestTarget.combo.join(targetArrow)}]</strong> (AI勝率: ${(bestTarget.prob * 100).toFixed(1)}%) 等に資金の大部分（${(totalBudget - evMaxBet.bet).toLocaleString()}円）を配分してトリガミを回避しつつ、期待値が最も高い${evMaxBet.id.startsWith('f_') ? '3連複' : '3連単'} <strong>[${evMaxBet.combo.join(evMaxArrow)}]</strong> (オッズ: ${evMaxBet.odds.toFixed(1)}倍) に<strong>${evMaxBet.bet.toLocaleString()}円</strong>を一撃狙いとして別枠投資するハイブリッド設計です。<br>
                     手堅く元本を回収・カバーしながら、同時に高配当のロマンも狙える合理的なポートフォリオ（合計 ${activeBets.length}点 / 投資額 ${totalBetAmount.toLocaleString()}円 / <strong>想定回収率 ${returnPct.toFixed(0)}%</strong>）を構成しています。
                 `;
             } else if (trios.length > 0 && trifectas.length > 0) {

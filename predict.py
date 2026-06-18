@@ -736,7 +736,7 @@ def main():
     
     jcd_input = ""
     rno_input = 12
-    total_budget = 3100
+    total_budget = 3000
     hd = datetime.now().strftime("%Y%m%d")
     
     # 引数が渡されている場合は、対話プロンプトをスキップして直接実行
@@ -801,7 +801,7 @@ def main():
         # 3. 総賭け金の設定
         print("\n【3】総賭け金を設定してください（円単位、100円〜）:")
         while True:
-            val = input("総掛け金 (デフォルト 3100): ").strip()
+            val = input("総掛け金 (デフォルト 3000): ").strip()
             if not val:
                 break
             if val.isdigit() and int(val) >= 100:

@@ -83,7 +83,7 @@ with col2:
     rno = st.number_input("レース番号 (R)", min_value=1, max_value=12, value=1, step=1)
     
 with col3:
-    budget = st.number_input("総賭け金 (円)", min_value=100, value=3100, step=100)
+    budget = st.number_input("総賭け金 (円)", min_value=100, value=3000, step=100)
     
 with col4:
     date_picker = st.date_input("対象日", datetime.today())
@@ -112,16 +112,6 @@ if st.button("🚀 AI予想＆シミュレータを実行"):
                 html_content = html_content.replace("const DATA_PLACEHOLDER = null;", f"const DATA_PLACEHOLDER = {data_json};")
                 
                 st.success(f"🎉 {selected_stadium_name} {rno}R の解析が完了しました！")
-                
-                # ダウンロードボタンの設置
-                st.download_button(
-                    label="💾 ローカル保存用予想レポートHTMLをダウンロード",
-                    data=html_content,
-                    file_name=f"kyotei_ai_report_{jcd}_{rno}_{date_str}.html",
-                    mime="text/html",
-                )
-                
-                st.markdown("<br>", unsafe_allow_html=True)
                 
                 # iframe 埋め込み
                 components.html(html_content, height=1350, scrolling=True)
