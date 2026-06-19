@@ -1227,8 +1227,14 @@
                 return found ? found.odds : -1;
             };
 
-            // オッズが有効（欠場などではない）な組み合わせのみを抽出
-            const validCombos = predCombos.filter(c => findOdds(c.combo, false) > 0);
+            // オッズデータが存在するか（発売中か）を判定
+            const hasOddsData = oddsList && oddsList.length > 0;
+            
+            // オッズデータがある場合は、オッズが有効（欠場などではない）な組み合わせのみを抽出
+            // オッズデータが無い（発売前など）場合は、すべての組み合わせを有効とする
+            const validCombos = hasOddsData 
+                ? predCombos.filter(c => findOdds(c.combo, false) > 0)
+                : predCombos;
 
             // 3連単
             const honmeiList = validCombos.filter(c => c.combo[0] === 1).slice(0, 4);
@@ -1251,7 +1257,7 @@
             predCombos.forEach(c => {
                 const key = [...c.combo].sort((a,b)=>a-b).join("-");
                 const combo = key.split("-").map(Number);
-                if (findOdds(combo, true) > 0) {
+                if (!hasOddsData || findOdds(combo, true) > 0) {
                     trioMap[key] = (trioMap[key] || 0) + c.prob;
                 }
             });
