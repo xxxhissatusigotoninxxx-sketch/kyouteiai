@@ -1080,17 +1080,22 @@
             
             racers.forEach(r => {
                 const tr = document.createElement("tr");
+                if (r.isAbsent) {
+                    tr.style.opacity = "0.5";
+                    tr.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
+                }
                 const winPercent = r.p1.toFixed(1);
                 
                 // FL表示
-                const flText = `F${r.flying || 0} L${r.late || 0}`;
-                const flColor = (r.flying > 0 || r.late > 0) ? 'color: var(--danger); font-weight: 700;' : 'color: var(--text-muted);';
-                const flStyle = (r.flying > 0 || r.late > 0) ? 'color: #f87171; font-weight: 700;' : '';
+                const flText = r.isAbsent ? '-' : `F${r.flying || 0} L${r.late || 0}`;
+                const flColor = (!r.isAbsent && (r.flying > 0 || r.late > 0)) ? 'color: var(--danger); font-weight: 700;' : 'color: var(--text-muted);';
+                const flStyle = (!r.isAbsent && (r.flying > 0 || r.late > 0)) ? 'color: #f87171; font-weight: 700;' : '';
                 
                 // 率の表示形式
-                const nationRate = `${r.winRate.toFixed(2)} (${r.doubleRate.toFixed(0)}%)`;
-                const localRate = r.localWinRate ? `${r.localWinRate.toFixed(2)} (${r.localDoubleRate.toFixed(0)}%)` : '-';
-                const localWinRateStr = r.localWinRate ? r.localWinRate.toFixed(2) : '-';
+                const nationRate = r.isAbsent ? '-' : `${r.winRate.toFixed(2)} (${r.doubleRate.toFixed(0)}%)`;
+                const localRate = (r.isAbsent) ? '-' : (r.localWinRate ? `${r.localWinRate.toFixed(2)} (${r.localDoubleRate.toFixed(0)}%)` : '-');
+                const localWinRateStr = (r.isAbsent) ? '-' : (r.localWinRate ? r.localWinRate.toFixed(2) : '-');
+                const exhibitStr = r.isAbsent ? '-' : r.exhibit.toFixed(2);
                 
                 tr.innerHTML = `
                     <td><span class="boat-badge bb${r.num}">${r.num}</span></td>
@@ -1102,9 +1107,9 @@
                                 <span style="${flStyle}">${flText}</span>
                             </div>
                             <div class="racer-mobile-row" style="color: var(--text-muted); font-size: 0.65rem;">
-                                <span>全国:${r.winRate.toFixed(2)}</span>
+                                <span>全国:${r.isAbsent ? '-' : r.winRate.toFixed(2)}</span>
                                 <span>当地:${localWinRateStr}</span>
-                                <span>M:${Math.round(r.motorRate)}%</span>
+                                <span>M:${r.isAbsent ? '-' : Math.round(r.motorRate) + '%'}</span>
                             </div>
                         </div>
                     </td>
@@ -1112,8 +1117,8 @@
                     <td style="${flColor}">${flText}</td>
                     <td style="font-weight:600;">${nationRate}</td>
                     <td>${localRate}</td>
-                    <td>${Math.round(r.motorRate)}%</td>
-                    <td style="font-family:'Outfit'; font-weight:500;">${r.exhibit.toFixed(2)}</td>
+                    <td>${r.isAbsent ? '-' : Math.round(r.motorRate) + '%'}</td>
+                    <td style="font-family:'Outfit'; font-weight:500;">${exhibitStr}</td>
                     <td>
                         <div style="display:flex; align-items:center; gap:0.75rem;">
                             <div class="prob-bar-container" style="flex-grow:1;">
@@ -1222,10 +1227,13 @@
                 return found ? found.odds : -1;
             };
 
+            // オッズが有効（欠場などではない）な組み合わせのみを抽出
+            const validCombos = predCombos.filter(c => findOdds(c.combo, false) > 0);
+
             // 3連単
-            const honmeiList = predCombos.filter(c => c.combo[0] === 1).slice(0, 4);
-            const taikoList = predCombos.filter(c => c.combo[0] !== 1 && (c.combo[0] === 2 || c.combo[0] === 3 || c.combo[0] === 4)).slice(0, 4);
-            const anaList = predCombos.filter(c => c.combo[0] === 5 || c.combo[0] === 6 || (c.combo[0] >= 3 && c.combo[1] >= 4)).slice(0, 4);
+            const honmeiList = validCombos.filter(c => c.combo[0] === 1).slice(0, 4);
+            const taikoList = validCombos.filter(c => c.combo[0] !== 1 && (c.combo[0] === 2 || c.combo[0] === 3 || c.combo[0] === 4)).slice(0, 4);
+            const anaList = validCombos.filter(c => c.combo[0] === 5 || c.combo[0] === 6 || (c.combo[0] >= 3 && c.combo[1] >= 4)).slice(0, 4);
             
             let tIdx = 0;
             honmeiList.forEach(c => {
@@ -1242,7 +1250,10 @@
             const trioMap = {};
             predCombos.forEach(c => {
                 const key = [...c.combo].sort((a,b)=>a-b).join("-");
-                trioMap[key] = (trioMap[key] || 0) + c.prob;
+                const combo = key.split("-").map(Number);
+                if (findOdds(combo, true) > 0) {
+                    trioMap[key] = (trioMap[key] || 0) + c.prob;
+                }
             });
             
             const sortedTrios = Object.keys(trioMap).map(key => {

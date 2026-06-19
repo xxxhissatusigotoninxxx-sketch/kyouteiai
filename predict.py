@@ -228,7 +228,7 @@ def parse_racelist(html):
             
     for boat_num in range(1, 7):
         target_tbody = None
-        color_class = f"is-boatColor{boat_num} is-fs14"
+        color_class = f"is-boatColor{boat_num}"
         for tbody in tbodies:
             if color_class in tbody:
                 target_tbody = tbody
@@ -236,6 +236,15 @@ def parse_racelist(html):
                 
         if not target_tbody:
             continue
+            
+        # 欠場艇判定 (is-miss クラスの有無)
+        is_absent = False
+        start_tag_match = re.match(r'<tbody[^>]*>', target_tbody)
+        if start_tag_match:
+            if "is-miss" in start_tag_match.group(0):
+                is_absent = True
+        if "is-miss" in target_tbody:
+            is_absent = True
             
         toban = ""
         racer_class = "B1"
@@ -249,6 +258,10 @@ def parse_racelist(html):
         name_match = re.search(r'<div class="is-fs18 is-fBold">.*?<a[^>]*>(.*?)</a>', target_tbody, re.DOTALL)
         if name_match:
             racer_name = clean_html_tags(name_match.group(1)).replace(" ", "").replace("　", "")
+        else:
+            name_match2 = re.search(r'<div class="is-fs18 is-fBold">(.*?)</div>', target_tbody, re.DOTALL)
+            if name_match2:
+                racer_name = clean_html_tags(name_match2.group(1)).replace(" ", "").replace("　", "")
             
         line_h2_cells = re.findall(r'<td class="is-lineH2"[^>]*>(.*?)</td>', target_tbody, re.DOTALL)
         
@@ -305,10 +318,12 @@ def parse_racelist(html):
             "motorRate": motor_rate,
             "boatRate": boat_rate,
             "flying": flying,
-            "late": late
+            "late": late,
+            "isAbsent": is_absent
         })
         
-    return {"title": race_title, "racers": racers}
+    absent_boats = [r["num"] for r in racers if r.get("isAbsent", False)]
+    return {"title": race_title, "racers": racers, "absent_boats": absent_boats}
 
 def parse_beforeinfo(html):
     """直前情報・展示タイム・気象をパース"""
@@ -326,6 +341,9 @@ def parse_beforeinfo(html):
         if not target_tbody:
             continue
             
+        # 欠場判定
+        is_absent = "is-miss" in target_tbody
+        
         rowspan_cells = re.findall(r'<td rowspan="4"[^>]*>(.*?)</td>', target_tbody, re.DOTALL)
         ex_time = 6.80
         tilt = -0.5
@@ -340,7 +358,7 @@ def parse_beforeinfo(html):
                 except:
                     pass
                     
-        exhibitions[boat_num] = {"exhibit": ex_time, "tilt": tilt}
+        exhibitions[boat_num] = {"exhibit": ex_time, "tilt": tilt, "isAbsent": is_absent}
         
     weather = "fine"
     wind_speed = 2
@@ -383,14 +401,20 @@ def parse_beforeinfo(html):
         }
     }
 
-def parse_odds_3t_3f(html_3t, html_3f):
+def parse_odds_3t_3f(html_3t, html_3f, absent_boats=None):
     """オッズをパース（公式サイトHTMLの配置順序に完全同期）"""
+    if absent_boats is None:
+        absent_boats = []
+        
     odds_3t = []
     odds_3f = []
     
     if html_3t:
-        odds_cells = re.findall(r'<td class="[^"]*oddsPoint[^"]*"[^>]*>(.*?)</td>', html_3t, re.DOTALL)
+        odds_cells = re.findall(r'<td class="([^"]*oddsPoint[^"]*)"[^>]*>(.*?)</td>', html_3t, re.DOTALL)
         if odds_cells:
+            # もしセルの数が120個未満（セルが削減されている）の場合
+            use_filtered = (len(odds_cells) < 120)
+            
             # 3連単のHTML出現順に合わせた combos を生成
             block_orders = {}
             for first in range(1, 7):
@@ -399,25 +423,41 @@ def parse_odds_3t_3f(html_3t, html_3f):
                     if second == first: continue
                     for third in range(1, 7):
                         if third == first or third == second: continue
+                        if use_filtered:
+                            if first in absent_boats or second in absent_boats or third in absent_boats:
+                                continue
                         order.append((second, third))
                 block_orders[first] = order
                 
             combos_3t = []
-            for r in range(20):
-                for first in range(1, 7):
-                    second, third = block_orders[first][r]
-                    combos_3t.append([first, second, third])
+            if use_filtered:
+                # 欠場艇を除いた combos を HTML の表示順に並べる
+                max_len = max(len(block_orders[f]) for f in range(1, 7) if f not in absent_boats)
+                for r in range(max_len):
+                    for first in range(1, 7):
+                        if first in absent_boats: continue
+                        if r < len(block_orders[first]):
+                            second, third = block_orders[first][r]
+                            combos_3t.append([first, second, third])
+            else:
+                for r in range(20):
+                    for first in range(1, 7):
+                        second, third = block_orders[first][r]
+                        combos_3t.append([first, second, third])
             
-            for idx, cell in enumerate(odds_cells):
+            for idx, cell_info in enumerate(odds_cells):
                 if idx >= len(combos_3t):
                     break
-                val_str = clean_html_tags(cell)
+                cls_attr, cell_html = cell_info
+                if "is-miss" in cls_attr:
+                    continue
+                val_str = clean_html_tags(cell_html)
                 val = safe_float(val_str, -1.0)
                 if val > 0:
                     odds_3t.append({"combo": combos_3t[idx], "odds": val})
                     
     if html_3f:
-        odds_cells = re.findall(r'<td class="[^"]*oddsPoint[^"]*"[^>]*>(.*?)</td>', html_3f, re.DOTALL)
+        odds_cells = re.findall(r'<td class="([^"]*oddsPoint[^"]*)"[^>]*>(.*?)</td>', html_3f, re.DOTALL)
         if odds_cells:
             # 3連複のHTML出現順に合わせた combos を生成
             rows_data = [
@@ -432,15 +472,24 @@ def parse_odds_3t_3f(html_3t, html_3f):
                 [(1, 4, 6), (2, 4, 6), (3, 4, 6)],
                 [(1, 5, 6), (2, 5, 6), (3, 5, 6), (4, 5, 6)]
             ]
+            
+            use_filtered = (len(odds_cells) < 20)
+            
             combos_3f = []
             for row in rows_data:
                 for combo in row:
+                    if use_filtered:
+                        if combo[0] in absent_boats or combo[1] in absent_boats or combo[2] in absent_boats:
+                            continue
                     combos_3f.append(list(combo))
                     
-            for idx, cell in enumerate(odds_cells):
+            for idx, cell_info in enumerate(odds_cells):
                 if idx >= len(combos_3f):
                     break
-                val_str = clean_html_tags(cell)
+                cls_attr, cell_html = cell_info
+                if "is-miss" in cls_attr:
+                    continue
+                val_str = clean_html_tags(cell_html)
                 val = safe_float(val_str, -1.0)
                 if val > 0:
                     odds_3f.append({"combo": combos_3f[idx], "odds": val})
@@ -452,6 +501,10 @@ def parse_odds_3t_3f(html_3t, html_3f):
 # ---------------------------------------------------------------------------
 def calculate_predictions(racers, stadium_rates, weather, fan_db):
     """AI予想コア（Plackett-Luce確率モデル）"""
+    # 欠場艇と出走艇を分ける
+    active_racers = [r for r in racers if not r.get("isAbsent", False)]
+    absent_racers = [r for r in racers if r.get("isAbsent", False)]
+    
     scores = []
     base_lane_scores = {1: 95.0, 2: 52.0, 3: 46.0, 4: 38.0, 5: 28.0, 6: 20.0}
     
@@ -475,10 +528,10 @@ def calculate_predictions(racers, stadium_rates, weather, fan_db):
         if c in stadium_by_course:
             base_lane_scores[c] = base_lane_scores[c] * 0.4 + stadium_by_course[c]["p1"] * 1.2
 
-    exhibits = [r["exhibit"] for r in racers if r.get("exhibit") is not None]
+    exhibits = [r["exhibit"] for r in active_racers if r.get("exhibit") is not None]
     avg_exhibit = sum(exhibits) / len(exhibits) if len(exhibits) > 0 else 6.80
 
-    for racer in racers:
+    for racer in active_racers:
         num = racer["num"]
         toban = racer["toban"]
         
@@ -622,11 +675,48 @@ def calculate_predictions(racers, stadium_rates, weather, fan_db):
             "late": r["late"],
             "score": r["score"],
             "isMerged": r["isMerged"],
+            "isAbsent": False,
             "p1": p1[idx] * 100.0,
             "p2": p2[idx] * 100.0,
             "p3": p3[idx] * 100.0
         })
         
+    for r in absent_racers:
+        # ファン手帳からマージ
+        toban = r["toban"]
+        fan_info = fan_db.get(toban, {})
+        racer_class = fan_info.get("class", r["racerClass"])
+        win_rate = fan_info.get("winRate", r["winRate"])
+        double_rate = fan_info.get("doubleRate", r["doubleRate"])
+        avg_st = fan_info.get("avgST", r["avgST"])
+        local_win_rate = fan_info.get("localWinRate", r["localWinRate"])
+        local_double_rate = fan_info.get("localDoubleRate", r.get("localDoubleRate", 30.0))
+        flying = r.get("flying", fan_info.get("flying", 0))
+        late = r.get("late", fan_info.get("late", 0))
+        
+        racers_prob.append({
+            "num": r["num"],
+            "name": r["name"] + "(欠場)",
+            "racerClass": racer_class,
+            "winRate": win_rate,
+            "doubleRate": double_rate,
+            "localWinRate": local_win_rate,
+            "localDoubleRate": local_double_rate,
+            "avgST": avg_st,
+            "exhibit": r["exhibit"],
+            "motorRate": r["motorRate"],
+            "boatRate": r["boatRate"],
+            "flying": flying,
+            "late": late,
+            "score": 0.0,
+            "isMerged": toban in fan_db,
+            "isAbsent": True,
+            "p1": 0.0,
+            "p2": 0.0,
+            "p3": 0.0
+        })
+        
+    racers_prob.sort(key=lambda x: x["num"])
     combos.sort(key=lambda x: x["prob"], reverse=True)
     return {"racers": racers_prob, "combos": combos}
 
@@ -689,15 +779,21 @@ def run_prediction_flow(jcd_input, rno_input, total_budget, hd):
     # パース処理
     race_info = parse_racelist(racelist_html)
     ex_info = parse_beforeinfo(before_html)
-    odds_info = parse_odds_3t_3f(odds3t_html, odds3f_html)
+    
+    # 欠場艇リストを取得
+    absent_boats = race_info.get("absent_boats", [])
+    
+    odds_info = parse_odds_3t_3f(odds3t_html, odds3f_html, absent_boats)
     stadium_rates = parse_stadium_rates(stadium_html)
     
     # 展示タイム・チルトのマージ
     for r in race_info["racers"]:
         num = r["num"]
-        ex_data = ex_info["exhibitions"].get(num, {"exhibit": 6.80, "tilt": -0.5})
+        ex_data = ex_info["exhibitions"].get(num, {"exhibit": 6.80, "tilt": -0.5, "isAbsent": False})
         r["exhibit"] = ex_data["exhibit"]
         r["tilt"] = ex_data["tilt"]
+        if ex_data.get("isAbsent", False):
+            r["isAbsent"] = True
         
     print("✅ データの取得とパースが完了しました。")
     
