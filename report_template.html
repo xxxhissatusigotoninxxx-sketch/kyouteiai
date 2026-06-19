@@ -1674,37 +1674,52 @@
             
             if (evMaxItem) {
                 evMaxItem.isEVMax = true;
-                allocations[evMaxItem.id] = 100;
             }
             
-            let remaining = totalBudget - 100;
+            let remaining = totalBudget;
             
-            // 2. 残りの買い目に対して本命重視配分を適用
-            const otherItems = valid.filter(x => x.id !== evMaxItem.id);
-            const sortedOthers = [...otherItems].sort((a, b) => b.prob - a.prob);
+            // 2. すべての買い目（一撃大穴を含む）を確率順でループし、非ガミ最小金額を配分
+            const sortedItems = [...valid].sort((a, b) => b.prob - a.prob);
             const selectedActive = [];
             
-            for (let i = 0; i < sortedOthers.length; i++) {
-                const item = sortedOthers[i];
-                // 総予算 totalBudget に対してガミらないための最小金額
+            for (let i = 0; i < sortedItems.length; i++) {
+                const item = sortedItems[i];
                 const minBet = Math.max(100, Math.ceil(totalBudget / item.odds / 100) * 100);
                 
                 if (remaining >= minBet) {
                     allocations[item.id] = minBet;
                     remaining -= minBet;
                     selectedActive.push(item.id);
+                } else if (item.id === evMaxItem.id && remaining >= 100 && allocations[item.id] === 0) {
+                    // 予算不足でも、一撃大穴枠には最低100円を割り当てる
+                    allocations[item.id] = 100;
+                    remaining -= 100;
+                    selectedActive.push(item.id);
+                }
+            }
+            
+            // 低予算で一撃大穴すら買えなかった場合の強制確保
+            if (evMaxItem && allocations[evMaxItem.id] === 0) {
+                let allocatedSum = 0;
+                valid.forEach(x => { allocatedSum += allocations[x.id]; });
+                
+                if (allocatedSum + 100 <= totalBudget) {
+                    allocations[evMaxItem.id] = 100;
+                } else {
+                    const activeSorted = selectedActive.map(id => valid.find(x => x.id === id)).sort((a, b) => a.prob - b.prob);
+                    for (let x of activeSorted) {
+                        if (allocations[x.id] >= 100) {
+                            allocations[x.id] -= 100;
+                            allocations[evMaxItem.id] = 100;
+                            break;
+                        }
+                    }
                 }
             }
             
             // 3. 余剰金を「一撃大穴」に全額上乗せ（回収率最大化）
             if (remaining >= 100 && evMaxItem) {
-                allocations[evMaxItem.id] += remaining;
-                remaining = 0;
-            }
-            
-            // フォールバック: 残り予算で本命が買えなかった場合、残った予算で買える本命を無理やり1点買う
-            if (selectedActive.length === 0 && sortedOthers.length > 0) {
-                allocations[sortedOthers[0].id] = remaining;
+                allocations[evMaxItem.id] = (allocations[evMaxItem.id] || 0) + remaining;
                 remaining = 0;
             }
             
