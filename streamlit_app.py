@@ -91,6 +91,28 @@ with col4:
 
 st.markdown("---")
 
+def get_ai_decision(data):
+    # 1号艇のAI確率
+    racers = data.get("prediction", {}).get("racers", [])
+    r1 = next((r for r in racers if r.get("num") == 1), None)
+    r1_p1 = r1.get("p1", 0) if r1 else 0
+    
+    # 気象情報
+    w = data.get("weather", {})
+    wind = w.get("windSpeed", 0)
+    wave = w.get("wave", 0)
+    
+    is_recommended = (r1_p1 >= 60.0) and (wind <= 4) and (wave <= 4)
+    reasons = []
+    if r1_p1 < 60.0:
+        reasons.append("イン信頼度低")
+    if wind > 4:
+        reasons.append(f"強風({wind}m)")
+    if wave > 4:
+        reasons.append(f"高波({wave}cm)")
+        
+    return is_recommended, reasons
+
 # 実行ボタン
 if st.button("🚀 AI予想＆シミュレータを実行"):
     with st.spinner("最新データを公式サイトから取得中（出走表・オッズ・直前情報・コース入着率）..."):
@@ -111,7 +133,13 @@ if st.button("🚀 AI予想＆シミュレータを実行"):
                 data_json = json.dumps(data, ensure_ascii=False)
                 html_content = html_content.replace("const DATA_PLACEHOLDER = null;", f"const DATA_PLACEHOLDER = {data_json};")
                 
-                st.success(f"🎉 {selected_stadium_name} {rno}R の解析が完了しました！")
+                # AI判定の実行
+                is_rec, reasons = get_ai_decision(data)
+                
+                if is_rec:
+                    st.success(f"🎉 {selected_stadium_name} {rno}R の解析が完了しました！\n\n**👍 AI推奨判定：【推奨（勝負レース）】** イン逃げ期待度が高く、コンディションも穏やかです。")
+                else:
+                    st.warning(f"🎉 {selected_stadium_name} {rno}R の解析が完了しました！\n\n**⚠️ AI推奨判定：【見送り推奨】** リスク要因（{', '.join(reasons)}）があり、大荒れの懸念があります。")
                 
                 # iframe 埋め込み
                 components.html(html_content, height=1350, scrolling=True)
@@ -119,3 +147,4 @@ if st.button("🚀 AI予想＆シミュレータを実行"):
         except Exception as e:
             st.error(f"❌ 処理中にエラーが発生しました: {str(e)}")
             st.info("※オッズがまだ公開されていないか、対象レースのデータが公式サイトにない可能性があります。深夜・早朝の場合は過去日付（昨日の日付など）を指定してお試しください。")
+
