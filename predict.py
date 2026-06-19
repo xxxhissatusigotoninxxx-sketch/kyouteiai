@@ -226,14 +226,30 @@ def parse_racelist(html):
         if title_match2:
             race_title = clean_html_tags(title_match2.group(1))
             
+    # 選手情報が含まれる tbody を抽出する
+    racer_tbodies = []
+    for tbody in tbodies:
+        start_tag_match = re.match(r'<tbody[^>]*>', tbody)
+        if start_tag_match:
+            start_tag = start_tag_match.group(0)
+            if "is-fs12" in start_tag or "is-miss" in start_tag:
+                racer_tbodies.append(tbody)
+                
     for boat_num in range(1, 7):
         target_tbody = None
-        color_class = f"is-boatColor{boat_num}"
-        for tbody in tbodies:
-            if color_class in tbody:
-                target_tbody = tbody
-                break
-                
+        if len(racer_tbodies) == 6:
+            target_tbody = racer_tbodies[boat_num - 1]
+        else:
+            # フォールバック
+            color_class = f"is-boatColor{boat_num}"
+            for tbody in tbodies:
+                start_tag_match = re.match(r'<tbody[^>]*>', tbody)
+                if start_tag_match:
+                    start_tag = start_tag_match.group(0)
+                    if ("is-fs12" in start_tag or "is-miss" in start_tag) and color_class in tbody:
+                        target_tbody = tbody
+                        break
+                        
         if not target_tbody:
             continue
             
@@ -330,14 +346,30 @@ def parse_beforeinfo(html):
     tbodies = re.findall(r'<tbody.*?>.*?</tbody>', html, re.DOTALL)
     exhibitions = {}
     
+    # 選手情報が含まれる tbody を抽出する
+    racer_tbodies = []
+    for tbody in tbodies:
+        start_tag_match = re.match(r'<tbody[^>]*>', tbody)
+        if start_tag_match:
+            start_tag = start_tag_match.group(0)
+            if "is-fs12" in start_tag or "is-miss" in start_tag:
+                racer_tbodies.append(tbody)
+                
     for boat_num in range(1, 7):
         target_tbody = None
-        color_class = f"is-boatColor{boat_num}"
-        for tbody in tbodies:
-            if color_class in tbody:
-                target_tbody = tbody
-                break
-                
+        if len(racer_tbodies) == 6:
+            target_tbody = racer_tbodies[boat_num - 1]
+        else:
+            # フォールバック
+            color_class = f"is-boatColor{boat_num}"
+            for tbody in tbodies:
+                start_tag_match = re.match(r'<tbody[^>]*>', tbody)
+                if start_tag_match:
+                    start_tag = start_tag_match.group(0)
+                    if ("is-fs12" in start_tag or "is-miss" in start_tag) and color_class in tbody:
+                        target_tbody = tbody
+                        break
+                        
         if not target_tbody:
             continue
             
